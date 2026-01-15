@@ -229,7 +229,13 @@ The system demonstrates proficiency in quantitative finance, software engineerin
 
 ---
 
-**Author**: Gonzi  
+**Author**: Anonym_  
 **Institution**: ESSCA School of Management  
 **Program**: MSc Finance & Data Analytics  
 **Date**: January 2026
+
+### Intellectual Property Notice
+
+This project was developed independently for educational and
+career development purposes. All intellectual property remains
+with the author.
