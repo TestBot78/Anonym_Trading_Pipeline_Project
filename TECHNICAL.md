@@ -443,3 +443,19 @@ INFO -    Max (liquidity):  4,500,000 shares
 INFO -    Max (portfolio):  850 shares
 INFO -    Target Shares:    850 shares
 ```
+---
+
+*Disclaimer: This is an educational project. Past performance does not guarantee future results. Trading involves risk of loss.*
+
+---
+
+**Author**: Anonym_  
+**Institution**: ESSCA School of Management  
+**Program**: MSc Finance & Data Analytics candidate
+**Date**: January 2026
+
+### Intellectual Property Notice
+
+This project was developed independently for educational and
+career development purposes. All intellectual property remains
+with the author.
