@@ -1,6 +1,6 @@
 {
-  "alpaca_api_key": "PKUCJCMRY3NOSBOT7IA362PY5U",
-  "alpaca_api_secret": "7bLyEZ3HKoNkC3xPvySgMi5wSYNeqfaiaJRdxehchE32",
+  "alpaca_api_key": "ALPACA KEY",
+  "alpaca_api_secret": "ALPACA SECRET CODE",
   "alpaca_base_url": "https://paper-api.alpaca.markets",
   "symbols": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA"],
   "rebalance_frequency_minutes": 60,
@@ -23,4 +23,5 @@
   "db_path": "paper_trading_ibkr.db",
   "log_file": "paper_trading_ibkr.log",
   "log_level": "INFO"
+
 }
