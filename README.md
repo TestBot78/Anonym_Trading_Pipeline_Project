@@ -326,10 +326,10 @@ def calculate_target_positions(signals, equity, prices):
 
 | Parameter | Value | Action |
 |-----------|-------|--------|
-| Maximum Position Size | 20% | Per-asset limit |
-| Maximum Gross Leverage | 3.0x | Total exposure / equity |
-| Maximum Net Leverage | 1.5x | (Long - Short) / equity |
-| Liquidity Cap (NEW) | 10% ADV | Market impact prevention |
+| Maximum Position Size | 40% | Per-asset limit |
+| Maximum Gross Leverage | 3.5x | Total exposure / equity |
+| Maximum Net Leverage | 2.0x | (Long - Short) / equity |
+| Liquidity Cap (NEW) | 20% ADV | Market impact prevention |
 | Daily Loss Warning | -5% | Alert, reduce new positions |
 | Daily Loss Limit | -10% | Halt new positions |
 | Maximum Drawdown | -15% | Flatten 50% of portfolio |
