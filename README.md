@@ -33,7 +33,7 @@ This pipeline implements a **hybrid multi-factor trading system** that combines:
 - **5 Alpha Factors**: Volatility, Momentum, Tail Risk, Beta, Carry
 - **Multi-Timeframe Fusion**: 70% daily signals + 30% hourly tactical timing
 - **Real Benchmark Data**: Actual SPY returns for accurate beta/momentum calculations
-- **Liquidity Constraints**: 10% ADV cap to prevent market impact
+- **Liquidity Constraints**: 20% ADV cap to prevent market impact
 - **Dual-Broker Architecture**: Alpaca for data, Interactive Brokers for execution
 - **Comprehensive Risk Management**: Drawdown limits, leverage control, tail hedging
 
