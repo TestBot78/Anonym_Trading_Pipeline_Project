@@ -55,7 +55,7 @@ This pipeline implements a **hybrid multi-factor trading system** that combines:
 | Feature | Description |
 |---------|-------------|
 | **Real SPY Benchmark** | Uses actual SPY returns instead of approximations for accurate signal calculation |
-| **Liquidity Constraints** | Maximum 10% of 20-day ADV per position to prevent market impact |
+| **Liquidity Constraints** | Maximum 20% of 20-day ADV per position to prevent market impact |
 | **Dual-Broker Architecture** | Alpaca for superior data API, IBKR for execution (no PDT restrictions) |
 | **Stateful Tail Hedge** | Convex protection with state machine (activation at -5% DD) |
 | **Adaptive Position Decay** | Exponential decay (10-day halflife) with 15% buffer zone |
