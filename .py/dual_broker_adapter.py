@@ -20,9 +20,13 @@ class DualBrokerAdapter:
     """
     
     def __init__(self, alpaca_key, alpaca_secret, alpaca_base_url='https://paper-api.alpaca.markets',
-                 ibkr_host='IBKR IP', ibkr_port=XXXX, ibkr_client_id=1):
+                 ibkr_host='127.0.0.1', ibkr_port=7497, ibkr_client_id=1):
         
         self.logger = logging.getLogger('DualBroker')
+        
+        # Store Alpaca credentials (needed for IBKR adapter)
+        self.alpaca_key = alpaca_key
+        self.alpaca_secret = alpaca_secret
         
         # ========================================
         # ALPACA for DATA
@@ -39,7 +43,14 @@ class DualBrokerAdapter:
         # IBKR for EXECUTION
         # ========================================
         self.logger.info("Connecting to IBKR for order execution...")
-        self.ibkr = IBKRAdapter(host=ibkr_host, port=ibkr_port, client_id=ibkr_client_id)
+        self.ibkr = IBKRAdapter(
+            host=ibkr_host, 
+            port=ibkr_port, 
+            client_id=ibkr_client_id,
+            alpaca_key_id=alpaca_key,           # Pass Alpaca credentials for market data
+            alpaca_secret_key=alpaca_secret,    # Pass Alpaca credentials for market data
+            logger=self.logger                  # Pass logger
+        )
         self.logger.info("✅ IBKR connected (execution)")
         
         self.logger.info("")
@@ -61,6 +72,15 @@ class DualBrokerAdapter:
         self.logger.debug(f"[ALPACA] Getting bars: {symbol} {timeframe}")
         
         try:
+            from datetime import datetime, timedelta
+            
+            # Si pas de start, calculer basé sur limit
+            if start is None and limit is not None:
+                # Ajouter des jours supplémentaires pour weekends/holidays
+                days_back = int(limit * 1.5) + 10
+                start = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+            
+            
             bars = self.alpaca.get_bars(
                 symbol,
                 timeframe,
@@ -204,5 +224,4 @@ class DualBrokerAdapter:
         try:
             self.disconnect()
         except:
-
             pass
