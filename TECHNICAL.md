@@ -964,11 +964,11 @@ CREATE TABLE alerts (
 | `symbols` | array | ["AAPL",...] | Universe |
 | `rebalance_frequency_minutes` | int | 60 | Rebalance interval |
 | `min_trade_size` | int | 1 | Min shares |
-| `max_position_size` | float | 0.20 | 20% max |
+| `max_position_size` | float | 0.40 | 40% max |
 | `max_daily_loss` | float | -0.05 | -5% limit |
 | `max_drawdown` | float | -0.15 | -15% limit |
-| `min_leverage` | float | 1.0 | Min leverage |
-| `max_leverage` | float | 3.0 | Max leverage |
+| `min_leverage` | float | 2.0 | Min leverage |
+| `max_leverage` | float | 3.5 | Max leverage |
 
 ### 9.2 Pipeline Config
 
