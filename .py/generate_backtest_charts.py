@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
-"""
-Generate Backtest Charts from Enhanced Pipeline
-================================================
-Run from your trading_pipeline folder:
-    python generate_backtest_charts.py
-"""
+# ============================================================
+# Copyright (c) 2026 Anonym_
+# All rights reserved.
+#
+# This code is provided for educational and personal use only.
+# Unauthorized commercial use, redistribution, or modification
+# without explicit permission is prohibited.
+# ============================================================
 
 import numpy as np
 import pandas as pd
