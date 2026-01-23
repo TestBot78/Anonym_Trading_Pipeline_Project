@@ -1,7 +1,7 @@
 
 ## Performance
 
-![Equity Curve](figures/equity_curve.png)
+![Equity Curve](equity_curve_3.png)
 
 | Metric | Strategy | SPY Buy & Hold |
 |--------|----------|----------------|
@@ -11,4 +11,5 @@
 
 *Backtest: 2016-01-21 to 2026-01-20 | 21 symbols (equal weight)*
 
-![Performance Summary](figures/performance_summary.png)
+![Performance Summary](performance_summary_3.png)
+
