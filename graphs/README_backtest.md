@@ -6,8 +6,6 @@ A sophisticated algorithmic trading system implementing multi-factor signal proc
 
 ## Performance
 
-![Equity Curve](figures/equity_curve.png)
-
 ### Conservative Configuration (1.5x Leverage)
 
 | Scenario | Total Return | Sharpe | Max Drawdown |
@@ -18,6 +16,7 @@ A sophisticated algorithmic trading system implementing multi-factor signal proc
 | **Realistic (costs + ADV)** | **+136.5%** | **0.69** | **-13.6%** |
 | SPY Buy & Hold | +328.2% | 0.87 | -33.7% |
 
+![Equity Curve 1.5x](1.5x/equity_curve_1.5.png)
 ### Aggressive Configuration (3x Leverage)
 
 | Scenario | Total Return | Sharpe | Max Drawdown |
@@ -28,11 +27,15 @@ A sophisticated algorithmic trading system implementing multi-factor signal proc
 | **Realistic (costs + ADV)** | **+565.3%** | **0.91** | **-25.7%** |
 | SPY Buy & Hold | +328.2% | 0.87 | -33.7% |
 
+![Equity Curve 1.5x](3x/equity_curve_3.png)
+
 *Backtest period: 2016-01-21 to 2026-01-20 | Universe: 21 US equities across 5 sectors*
 
-### Cost Impact Analysis
+## Cost Impact Analysis
 
-![Performance Summary](figures/performance_summary.png)
+![Performance Summary 1.5x](1.5x/performance_summary_1.5.png)
+
+![Performance Summary 3x](3x/performance_summary_3.png)
 
 Key findings from friction analysis:
 - Transaction costs (15 bps round-trip) reduce returns by approximately 8-10%
@@ -40,17 +43,25 @@ Key findings from friction analysis:
 - Realistic Sharpe remains above 0.65 after all frictions at conservative leverage
 - Risk-adjusted performance improves significantly vs benchmark at higher leverage
 
-### Gross & Net Exposure
+## Gross & Net Exposure
 
-![Gross Exposure](figures/gross_exposure.png)
+#### 1.5x Leverage
+![Gross Exposure 1.5x](1.5x/gross_exposure_1.5.png)
 
-![Net Exposure](figures/net_exposure.png)
+![Net Exposure 1.5x](1.5x/net_exposure_1.5.png)
+
+#### 3x Leverage
+![Gross Exposure 3x](3x/gross_exposure_3.png)
+
+![Net Exposure 3x](3x/net_exposure_3.png)
 
 The strategy maintains target leverage of 3x with dynamic deleveraging during drawdowns. Net exposure varies based on signal conviction, showing tactical shifts between long and short positioning.
 
 ### Drawdown Comparison
 
-![Drawdown](figures/drawdown.png)
+![Drawdown](1.5x/drawdown_1.5.png)
+
+![Drawdown](3x/drawdown_3.png)
 
 The strategy demonstrates superior drawdown control across market regimes:
 - **COVID Crash (Mar 2020)**: Strategy -13.6% vs SPY -33.7% at 1.5x leverage
@@ -114,7 +125,11 @@ The strategy employs a systematic approach to position sizing:
 
 ### Rolling Sharpe Ratio
 
-![Rolling Sharpe](figures/rolling_sharpe.png)
+#### 1.5x Sharpe ratio
+![Rolling Sharpe](1.5x/rolling_sharpe_1.5.png)
+
+#### 3x Sharpe ratio
+![Rolling Sharpe](3x/rolling_sharpe_3.png)
 
 The rolling 1-year Sharpe demonstrates strategy consistency:
 - Maintained positive Sharpe through 70%+ of the backtest period
@@ -123,7 +138,9 @@ The rolling 1-year Sharpe demonstrates strategy consistency:
 
 ### Monthly Returns
 
-![Monthly Returns](figures/monthly_returns.png)
+![Monthly Returns](1.5x/monthly_returns_1.5.png)
+
+![Monthly Returns](3x/monthly_returns_3.png)
 
 Monthly return distribution shows:
 - Positive skew with limited left-tail events
