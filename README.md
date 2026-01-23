@@ -113,19 +113,7 @@ This pipeline implements a **hybrid multi-factor trading system** that combines:
 | **Execution** | AlertManager | Email and Slack notifications |
 | **Storage** | TradingDatabase | SQLite persistence for all trading data |
 
-### File Structure
 
-```
-quantitative-trading-pipeline/
-├── paper_trading.py           # 1,700 lines - Main trading engine
-├── enhanced_pipeline.py       # 1,690 lines - Signal processing & backtesting
-├── hybrid_pipeline_weighted.py # 200 lines - Multi-timeframe fusion
-├── dual_broker_adapter.py     # 175 lines - Unified broker interface
-├── ibkr_adapter.py            # 418 lines - IBKR integration
-├── trading_config.json        # Runtime configuration
-├── paper_trading_ibkr.db      # SQLite database
-└── paper_trading_ibkr.log     # Execution logs
-```
 
 ### Dual-Broker Architecture
 
