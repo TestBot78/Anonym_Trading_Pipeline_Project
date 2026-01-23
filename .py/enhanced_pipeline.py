@@ -66,8 +66,8 @@ class PipelineConfig:
             'buffer_zone': 0.15,
             
             # Drawdown Control
-            'max_drawdown': -0.15,
-            'stop_loss': -0.20,
+            'max_drawdown': -0.30,
+            'stop_loss': -0.50,
             'recovery_threshold': -0.05,
             'recovery_speed': 0.1,
             
@@ -1073,37 +1073,42 @@ class RegimeAwareRiskManager:
         self.is_stopped = False
         self.recovery_factor = 0.0
     
-    def apply_drawdown_control_vectorized(self, 
-                                           positions: pd.Series, 
-                                           equity_curve: pd.Series) -> pd.Series:
+    def apply_drawdown_control_vectorized(
+        self,
+        positions: pd.Series,
+        equity_curve: pd.Series
+    ) -> pd.Series:
         """
-        Drawdown control vectorisé
-        
-        - Si DD < stop_loss: flatten
-        - Si DD < max_drawdown: progressive reduction
+        Drawdown control with cooldown stop (prevents permanent flatline)
         """
+
         peak_equity = equity_curve.cummax()
         drawdowns = (equity_curve - peak_equity) / peak_equity
-        
-        # Stop loss: flatten all
-        stop_loss_mask = drawdowns < self.config['stop_loss']
-        
-        # Progressive reduction
-        dd_reduction_mask = (drawdowns < self.config['max_drawdown']) & (drawdowns >= self.config['stop_loss'])
-        reduction_factors = 1 - (drawdowns.abs() / abs(self.config['max_drawdown'])) ** 2
+
+        stop_loss = self.config['stop_loss']          # e.g. -0.20
+        max_dd = self.config['max_drawdown']          # e.g. -0.10
+        cooldown_days = getattr(self.config, 'stop_cooldown_days', 63)
+
+        # Trigger only on crossing (NOT every day under the level)
+        trigger = (drawdowns < stop_loss) & (drawdowns.shift(1) >= stop_loss)
+
+        # Cooldown window after a trigger (finite stop, no infinite flatline)
+        in_stop = trigger.rolling(cooldown_days).max().fillna(0).astype(bool)
+
+        # Progressive reduction between max_dd and stop_loss
+        dd_reduction_mask = (drawdowns < max_dd) & (drawdowns >= stop_loss)
+        reduction_factors = 1 - (drawdowns.abs() / abs(max_dd)) ** 2
         reduction_factors = reduction_factors.clip(0, 1)
-        
-        # Apply
+
+        # Apply scaling
         scale_factors = pd.Series(1.0, index=positions.index)
         scale_factors[dd_reduction_mask] = reduction_factors[dd_reduction_mask]
-        scale_factors[stop_loss_mask] = 0
-        
+        scale_factors[in_stop] = 0.10
+
         controlled_positions = positions * scale_factors
-        
-        if stop_loss_mask.any():
-            self.logger.critical(f"   ⚠️  Stop loss triggered on {stop_loss_mask.sum()} days")
-        
+
         return controlled_positions
+
 
 
 # ============================================================================
@@ -1141,7 +1146,9 @@ class EnhancedProductionPipeline:
             'Carry': 'Carry',
             'Volatility': 'Volatility',
             'TailRisk': 'TailRisk',
-            'Beta': 'Beta'
+            'Beta': 'Beta',
+            'long_trend': 'Momentum',
+            'low_vol_factor': 'Volatility'
         }
     
     def add_signal(self, signal_class):
@@ -1149,10 +1156,7 @@ class EnhancedProductionPipeline:
         signal = signal_class(self.config, self.logger)
         self.signals[signal.name] = signal
     
-    def run_full_pipeline_vectorized(self, 
-                                      prices: pd.Series, 
-                                      returns: pd.Series, 
-                                      volume: pd.Series):
+    def run_full_pipeline_vectorized(self, prices: pd.Series, returns: pd.Series, volume: pd.Series, market_returns: pd.Series = None):
         """
         Exécute le pipeline complet avec tous les enhancements
         
@@ -1169,33 +1173,73 @@ class EnhancedProductionPipeline:
         10. Final equity & metrics
         """
         self.logger.info("="*70)
-        self.logger.info("🏦 ENHANCED PRODUCTION-READY PIPELINE")
+        self.logger.info("🏦 ENHANCED RESEARCH PIPELINE")
         self.logger.info("="*70)
         
         start_time = time.time()
         
         # Data prep
-        market_returns = returns * 0.6 + pd.Series(
-            np.random.normal(0, 0.01, len(returns)), 
-            index=returns.index
+        if market_returns is None:
+            # Default proxy: partially correlated with asset (only for research mode)
+            base = returns * 0.6
+
+            # Optional synthetic noise for stress-testing (OFF by default)
+            use_synthetic_market = False   # <- set True ONLY for robustness experiments
+
+            if use_synthetic_market:
+                rng = np.random.default_rng(42)
+                noise = rng.normal(0, returns.std(), len(returns)) * 0.2
+                used_market_returns = base + noise
+            else:
+                used_market_returns = base
+
+        else:
+            # Real benchmark provided (SPY, index, futures…)
+            used_market_returns = market_returns
+
+        used_market_returns = (
+            used_market_returns
+            .reindex(returns.index)
+            .fillna(0.0)
         )
+
         data = {
-            'returns': returns, 
-            'close': prices, 
-            'market_returns': market_returns
+            'returns': returns,
+            'close': prices,
+            'market_returns': used_market_returns
         }
+
         
         # 1. Compute signals
         self.logger.info("\n📊 Computing signals...")
         signals_df = pd.DataFrame(index=prices.index)
         
         for name, signal_obj in self.signals.items():
-            signals_df[name] = signal_obj.compute(data)
+            s = signal_obj.compute(data)
+
+            # NORMALIZE EACH SIGNAL
+            s = (s - s.rolling(252).mean()) / s.rolling(252).std()
+            s = s.clip(-3, 3).fillna(0.0)
+
+            signals_df[name] = s
+
             signal_obj.validate_rolling_vectorized(
                 signals_df[name], 
                 returns, 
                 self.config['validation_window']
             )
+
+        trend = prices / prices.rolling(200).mean() - 1
+        trend_signal = trend.clip(-0.5, 0.5).fillna(0.0)
+
+        # DEFENSIVE / LOW VOL FACTOR
+        low_vol = -returns.rolling(63).std()
+        low_vol_signal = (low_vol - low_vol.mean()) / low_vol.std()
+        low_vol_signal = low_vol_signal.clip(-3, 3).fillna(0.0)
+
+        signals_df["low_vol_factor"] = low_vol_signal
+
+        signals_df["long_trend"] = trend_signal
         
         # 2. Validation
         self.logger.info("📊 Validating signals...")
@@ -1267,6 +1311,8 @@ class EnhancedProductionPipeline:
             raw=False
         )
         composite_centered = composite_ranked - 0.5
+        deadband = 0.05  # start 0.03–0.10
+        composite_centered = composite_centered.where(composite_centered.abs() > deadband, 0.0)
         
         # 7. ENHANCEMENT 2: Position sizing with decay
         self.logger.info("🔧 Computing positions with decay...")
@@ -1286,21 +1332,64 @@ class EnhancedProductionPipeline:
         # 10. ENHANCEMENT 1: Stateful tail hedge
         self.logger.info("🛡️  Applying stateful tail hedge...")
         drawdowns = (equity_curve - equity_curve.cummax()) / equity_curve.cummax()
-        final_returns = controlled_positions.shift(1) * returns
-        hedged_returns = self.tail_hedge.apply_tail_hedge_stateful(
-            final_returns, returns, drawdowns
-        )
+
         
+        
+        # VOLATILITY TARGETING
+        realized_vol = returns.rolling(63).std() * np.sqrt(252)
+        target_vol = 0.12   # 15% annual target
+
+        scaler = (target_vol / realized_vol).clip(0.3, 2.0)
+
+        scaled_positions = controlled_positions * scaler
+
+        # REGIME FILTER (market trend filter)
+        market_trend = used_market_returns.rolling(200).mean()
+        regime_mask = market_trend > 0   # only trade in bull regimes
+
+
+        # DYNAMIC LEVERAGE
+        dd = (equity_curve - equity_curve.cummax()) / equity_curve.cummax()
+
+        max_leverage = 1.5
+        min_leverage = 1
+
+        lev = max_leverage * (1 + dd / 0.10)
+        lev = lev.clip(min_leverage, max_leverage)
+
+        # CRASH STOP WITH COOLDOWN
+        stop_level = -0.20
+        cooldown_days = 63   # ~3 months
+
+        trigger = ((dd < stop_level) & (dd.shift(1) >= stop_level)).astype(int)
+
+        # once triggered, stay in "cash" for cooldown_days
+        idx = np.arange(len(dd))
+        last_trigger_idx = pd.Series(np.where(trigger.values == 1, idx, np.nan), index=dd.index).ffill()
+
+        days_since_trigger = idx - last_trigger_idx.values
+        in_cooldown = (days_since_trigger >= 0) & (days_since_trigger < cooldown_days)
+        scaled_positions = scaled_positions.where(~in_cooldown, 0.0)    
+
+        scaled_positions = scaled_positions.where(regime_mask, 0.0)
+
+        scaled_positions = scaled_positions.clip(-lev, lev)
+
+        final_returns = scaled_positions.shift(1) * returns
+
+        running_equity = (1 + final_returns.fillna(0.0)).cumprod() * self.config['initial_capital']
+        dd = (running_equity - running_equity.cummax()) / running_equity.cummax()
+
         # 11. Final equity
-        final_equity = (1 + hedged_returns).cumprod() * self.config['initial_capital']
+        final_equity = (1 + final_returns).cumprod() * self.config['initial_capital']
         
         # Results
         results = pd.DataFrame({
             'raw_position': raw_positions,
-            'final_position': controlled_positions,
+            'final_position': scaled_positions,
             'position_age': position_ages,
             'returns': returns,
-            'strategy_returns': hedged_returns,
+            'strategy_returns': final_returns,
             'equity': final_equity,
             'drawdown': (final_equity - final_equity.cummax()) / final_equity.cummax()
         }, index=prices.index)
@@ -1483,7 +1572,7 @@ class TestSignalVectorization(unittest.TestCase):
         equity = (1 + portfolio_returns).cumprod() * 1000000
         drawdowns = (equity - equity.cummax()) / equity.cummax()
         
-        hedged = hedge.apply_tail_hedge_stateful(portfolio_returns, returns, drawdowns)
+        hedge = hedge.apply_tail_hedge_stateful(portfolio_returns, returns, drawdowns)
         
         # Hedge should have activated
         self.assertGreater(len(hedge.state_history), 0, "Hedge was never activated")
@@ -1582,7 +1671,7 @@ def main():
     """
     print("\n" + "█"*70)
     print("█" + " "*68 + "█")
-    print("█" + " "*15 + "ENHANCED PRODUCTION PIPELINE" + " "*25 + "█")
+    print("█" + " "*15 + "MULTI-FACTOR RESEARCH ENGINE" + " "*25 + "█")
     print("█" + " "*20 + "COMPLETE VERSION" + " "*32 + "█")
     print("█" + " "*68 + "█")
     print("█"*70 + "\n")
@@ -1692,7 +1781,7 @@ def main():
     print("   • pipeline.log (detailed logs)")
     
     print("\n" + "="*70)
-    print("🚀 PIPELINE READY FOR PRODUCTION")
+    print("🚀 PIPELINE EXECUTION COMPLETE")
     print("="*70 + "\n")
 
 
